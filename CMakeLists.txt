@@ -41,7 +41,31 @@ if((${IDF_TARGET} STREQUAL "esp32s3") OR (${IDF_TARGET} STREQUAL "esp32p4") OR (
     add_prebuilt_library(vadnet "${CMAKE_CURRENT_SOURCE_DIR}/lib/${IDF_TARGET}/libvadnet.a" PRIV_REQUIRES ${COMPONENT_NAME})
     add_prebuilt_library(wakenet "${CMAKE_CURRENT_SOURCE_DIR}/lib/${IDF_TARGET}/libwakenet.a" PRIV_REQUIRES ${COMPONENT_NAME})
     add_prebuilt_library(nsnet "${CMAKE_CURRENT_SOURCE_DIR}/lib/${IDF_TARGET}/libnsnet.a" PRIV_REQUIRES ${COMPONENT_NAME})
-    idf_component_get_property(esp_dsp_lib espressif__esp-dsp COMPONENT_LIB)
+
+    # esp-dsp 只接受本地 components/esp-dsp（通过 override_path），如果指向托管版本则报错
+    idf_build_get_property(_all_components BUILD_COMPONENTS)
+    get_filename_component(_esp_dsp_expected "${COMPONENT_PATH}/../esp-dsp" REALPATH)
+
+    set(esp_dsp_component "")
+    foreach(_cand espressif__esp-dsp esp-dsp)
+        list(FIND _all_components ${_cand} _idx)
+        if(NOT _idx EQUAL -1)
+            idf_component_get_property(_cand_dir ${_cand} COMPONENT_DIR)
+            if(EXISTS "${_cand_dir}")
+                get_filename_component(_cand_dir_real "${_cand_dir}" REALPATH)
+                if(_cand_dir_real STREQUAL _esp_dsp_expected)
+                    set(esp_dsp_component ${_cand})
+                    break()
+                endif()
+            endif()
+        endif()
+    endforeach()
+
+    if(esp_dsp_component STREQUAL "")
+        message(FATAL_ERROR "esp-dsp component not found or not using local components/esp-dsp (override_path required)")
+    endif()
+
+    idf_component_get_property(esp_dsp_lib ${esp_dsp_component} COMPONENT_LIB)
 
     set(sr_libs 
         dl_lib
