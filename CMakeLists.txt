@@ -13,9 +13,14 @@ if((${IDF_TARGET} STREQUAL "esp32s3") OR (${IDF_TARGET} STREQUAL "esp32p4") OR (
         )
 
     set(requires
-        json
         spiffs
         )
+
+    if(IDF_VERSION_MAJOR GREATER_EQUAL 6)
+        list(APPEND requires cjson)
+    else()
+        list(APPEND requires json)
+    endif()
 
     IF (IDF_VERSION_MAJOR GREATER 4)
         list(APPEND requires esp_partition)
@@ -96,6 +101,7 @@ if(CONFIG_PARTITION_TABLE_CUSTOM)
     partition_table_get_partition_info(offset "--partition-name model" "offset")
 
     if("${size}" AND "${offset}")
+        find_package(Python3 COMPONENTS Interpreter REQUIRED)
         set(MVMODEL_EXE ${COMPONENT_PATH}/model/movemodel.py)
         idf_build_get_property(build_dir BUILD_DIR)
         set(image_file ${build_dir}/srmodels/srmodels.bin)
@@ -103,7 +109,7 @@ if(CONFIG_PARTITION_TABLE_CUSTOM)
         add_custom_command(
             OUTPUT ${image_file}
             COMMENT "Move and Pack models..."
-            COMMAND python ${MVMODEL_EXE} -d1 ${SDKCONFIG} -d2 ${COMPONENT_PATH} -d3 ${build_dir}
+            COMMAND ${Python3_EXECUTABLE} ${MVMODEL_EXE} -d1 ${SDKCONFIG} -d2 ${COMPONENT_PATH} -d3 ${build_dir}
             DEPENDS ${SDKCONFIG}
             VERBATIM)
 
