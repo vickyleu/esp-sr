@@ -13,6 +13,7 @@
 // limitations under the License.
 
 #include "ekf.h"
+#include <cmath>
 #include <float.h>
 
 ekf::ekf(int x, int w) : NUMX(x),

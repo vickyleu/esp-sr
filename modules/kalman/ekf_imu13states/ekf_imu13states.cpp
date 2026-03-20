@@ -13,6 +13,7 @@
 // limitations under the License.
 
 #include "ekf_imu13states.h"
+#include <cmath>
 
 ekf_imu13states::ekf_imu13states() : ekf(13, 18),
     mag0(3, 1),
